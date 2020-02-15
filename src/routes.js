@@ -54,12 +54,9 @@ routes.get('/callback', async function (req, res) {
             });
         }
 
-        res.cookie("oauth_token", usuario.oauth_token);
-        res.cookie("oauth_token_secret", usuario.oauth_token_secret);
+        res.cookie("_id", usuario._id);
 
-        // res.send(usuario);
-
-        res.redirect("/timeline");
+        return res.redirect("/timeline");
     } catch (e) {
         return res.json({
             "error": e.response.data
@@ -67,12 +64,14 @@ routes.get('/callback', async function (req, res) {
     }
 });
 
-routes.get("/timeline", function (req, res) {
-    const { oauth_token, oauth_token_secret } = req.cookies;
+routes.get("/timeline", async function (req, res) {
+    const { _id } = req.cookies;
 
     // Usuário não está logado
-    if (!oauth_token || !oauth_token_secret)
+    if (!_id)
         return res.redirect("/twitter-login");
+
+    const { oauth_token, oauth_token_secret } = await Usuario.findOne({ _id });
 
     // Busca a Timeline
     let request_data = {
