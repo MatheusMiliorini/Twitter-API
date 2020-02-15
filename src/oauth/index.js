@@ -2,8 +2,8 @@ const OAuth = require("oauth-1.0a");
 const crypto = require("crypto");
 const fs = require('fs');
 
-const key = fs.readFileSync("keys/consumer_key.txt");
-const secret = fs.readFileSync("keys/consumer_secret.txt");
+const key = process.env.CONSUMER_KEY;
+const secret = process.env.CONSUMER_SECRET;
 
 const oauth = OAuth({
     consumer: {
