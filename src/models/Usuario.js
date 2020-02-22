@@ -1,10 +1,12 @@
 const mongoose = require('mongoose');
 
 const UsuarioSchema = mongoose.Schema({
-    user_id: Number,
-    oauth_token: String,
-    oauth_token_secret: String,
-    screen_name: String
+    usuario: String,            // Local
+    senha: String,              // Local
+    user_id: Number,            // Twitter
+    oauth_token: String,        // Twitter
+    oauth_token_secret: String, // Twitter
+    screen_name: String         // Twitter
 });
 
 module.exports = mongoose.model("Usuario", UsuarioSchema);
