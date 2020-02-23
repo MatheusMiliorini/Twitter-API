@@ -30,6 +30,16 @@ routes.post("/login", async function (req, res) {
   else
     return res.status(404).json({ error: "Usuário não localizado ou senha incorreta!" });
 });
+// Busca os dados do usuário
+routes.get("/usuario/:_id", async function (req, res) {
+  const { _id } = req.params;
+  const usuario = await Usuario.findById(_id);
+
+  if (!usuario)
+    return res.status(404).json({ error: "Usuário não localizado!" });
+
+  return res.json(usuario);
+})
 
 routes.get("/twitter-login", async function (req, res) {
   const request_data = {
@@ -39,6 +49,9 @@ routes.get("/twitter-login", async function (req, res) {
       oauth_callback: "http://localhost:3333/callback"
     }
   }
+
+  // Cookie para o usuário que fez a solicitação
+  res.cookie("_id", req.query._id);
 
   request(
     {
@@ -56,6 +69,7 @@ routes.get("/twitter-login", async function (req, res) {
 
 routes.get('/callback', async function (req, res) {
   let { oauth_token, oauth_verifier } = req.query;
+  const { _id } = req.cookies;
 
   try {
     let response = await axios.post("https://api.twitter.com/oauth/access_token", null, {
@@ -72,19 +86,19 @@ routes.get('/callback', async function (req, res) {
     let screen_name = response[3].split("=")[1];
 
     // Insere os dados do usuário no Mongo
-    let usuario = await Usuario.findOne({ user_id });
-    if (!usuario) {
-      usuario = await Usuario.create({
-        user_id,
-        screen_name,
-        oauth_token,
-        oauth_token_secret
-      });
-    }
+    let usuario = await Usuario.findOne({ _id });
 
-    res.cookie("_id", usuario._id);
+    // Adiciona os dados novos
+    usuario.oauth_token = oauth_token;
+    usuario.oauth_token_secret = oauth_token_secret;
+    usuario.user_id = user_id;
+    usuario.screen_name = screen_name;
 
-    return res.redirect("/timeline");
+    // Update no banco
+    await usuario.save();
+
+    // Fecha a aba de autenticação
+    res.send("<script>window.close()</script>");
   } catch (e) {
     return res.json({
       "error": e.response.data
