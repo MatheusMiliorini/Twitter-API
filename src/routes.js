@@ -106,14 +106,14 @@ routes.get('/callback', async function (req, res) {
   }
 });
 
-routes.get("/timeline", async function (req, res) {
-  const { _id } = req.cookies;
+routes.get("/tweets", async function (req, res) {
+  const { _id } = req.query;
 
   // Usuário não está logado
   if (!_id)
-    return res.redirect("/twitter-login");
+    return res.status(401).json({ error: "_id não informado!" });
 
-  const { oauth_token, oauth_token_secret } = await Usuario.findOne({ _id });
+  const { oauth_token, oauth_token_secret } = await Usuario.findById(_id);
 
   // Busca a Timeline
   let request_data = {
@@ -134,9 +134,9 @@ routes.get("/timeline", async function (req, res) {
     },
     function (error, response, body) {
       if (body)
-        res.send(body);
+        return res.send(body);
       else
-        res.send("Error!");
+        return res.status(500).send("Error!");
     }
   );
 });
