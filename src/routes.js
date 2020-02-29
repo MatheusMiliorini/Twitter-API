@@ -1,9 +1,9 @@
 const { Router } = require('express');
 const axios = require('axios');
 const oauth = require("./oauth");
-const request = require("request");
 const routes = Router();
 const Usuario = require('./models/Usuario');
+const qs = require('querystring');
 
 routes.post("/cadastro", async function (req, res) {
   const { usuario, senha } = req.body;
@@ -53,18 +53,17 @@ routes.get("/twitter-login", async function (req, res) {
   // Cookie para o usuário que fez a solicitação
   res.cookie("_id", req.query._id);
 
-  request(
-    {
-      url: request_data.url,
-      method: request_data.method,
-      form: oauth.authorize(request_data)
-    }, function (error, response, body) {
-      if (error)
-        return res.send("Erro! " + error);
-      const oauth_token = body.split("&")[0].split("=")[1];
-      return res.redirect(`https://api.twitter.com/oauth/authenticate?oauth_token=${oauth_token}`);
-    }
-  );
+  axios({
+    url: request_data.url,
+    method: request_data.method,
+    headers: oauth.toHeader(oauth.authorize(request_data)),
+    data: qs.stringify(request_data.data)
+  }).then(data => {
+    const oauth_token = data.data.split("&")[0].split("=")[1];
+    return res.redirect(`https://api.twitter.com/oauth/authenticate?oauth_token=${oauth_token}`);
+  }).catch(e => {
+    res.status(500).send(e.message);
+  });
 });
 
 routes.get('/callback', async function (req, res) {
@@ -117,28 +116,102 @@ routes.get("/tweets", async function (req, res) {
 
   // Busca a Timeline
   let request_data = {
-    url: "https://api.twitter.com/1.1/statuses/home_timeline.json",
+    url: "https://api.twitter.com/1.1/statuses/home_timeline.json?count=100",
     method: "GET",
     data: {}
+  }
+
+  const tokens = {
+    key: oauth_token,
+    secret: oauth_token_secret
+  }
+
+  axios({
+    url: request_data.url,
+    method: request_data.method,
+    headers: oauth.toHeader(oauth.authorize(request_data, tokens)),
+  }).then(data => {
+    return res.send(data.data)
+  }).catch(e => {
+    res.status(500).send(e.response.data);
+  });
+});
+
+// Favorita um tweet
+routes.post("/fav", async function (req, res) {
+  const { _id, id } = req.body;
+
+  // Usuário não está logado
+  if (!_id)
+    return res.status(401).json({ error: "_id não informado!" });
+
+  // ID do Tweet
+  if (!id)
+    return res.status(401).json({ error: "id do tweet não informado!" });
+
+  const { oauth_token, oauth_token_secret } = await Usuario.findById(_id);
+
+  // Busca a Timeline
+  let request_data = {
+    url: "https://api.twitter.com/1.1/favorites/create.json",
+    method: "POST",
+    data: {
+      id
+    }
   }
   const tokens = {
     key: oauth_token,
     secret: oauth_token_secret
   }
-  request(
-    {
-      url: request_data.url,
-      method: request_data.method,
-      form: request_data.data,
-      headers: oauth.toHeader(oauth.authorize(request_data, tokens))
-    },
-    function (error, response, body) {
-      if (body)
-        return res.send(body);
-      else
-        return res.status(500).send("Error!");
+
+  axios({
+    url: request_data.url,
+    method: request_data.method,
+    headers: oauth.toHeader(oauth.authorize(request_data, tokens)),
+    data: qs.stringify(request_data.data)
+  }).then(data => {
+    return res.send(data.data)
+  }).catch(e => {
+    res.status(500).send(e.message);
+  });
+});
+
+// Desfavorita um tweet
+routes.post("/unfav", async function (req, res) {
+  const { _id, id } = req.body;
+
+  // Usuário não está logado
+  if (!_id)
+    return res.status(401).json({ error: "_id não informado!" });
+
+  // ID do Tweet
+  if (!id)
+    return res.status(401).json({ error: "id do tweet não informado!" });
+
+  const { oauth_token, oauth_token_secret } = await Usuario.findById(_id);
+
+  // Busca a Timeline
+  let request_data = {
+    url: "https://api.twitter.com/1.1/favorites/destroy.json",
+    method: "POST",
+    data: {
+      id
     }
-  );
+  }
+  const tokens = {
+    key: oauth_token,
+    secret: oauth_token_secret
+  }
+  axios({
+    url: request_data.url,
+    method: request_data.method,
+    headers: oauth.toHeader(oauth.authorize(request_data, tokens)),
+    data: qs.stringify(request_data.data)
+  }).then(data => {
+    return res.send(data.data)
+  }).catch(e => {
+    res.status(500).send(e.message);
+  });
 });
 
 module.exports = routes;
