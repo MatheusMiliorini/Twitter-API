@@ -46,7 +46,7 @@ routes.get("/twitter-login", async function (req, res) {
     url: 'https://api.twitter.com/oauth/request_token',
     method: 'POST',
     data: {
-      oauth_callback: "http://localhost:3333/callback"
+      oauth_callback: process.env.CALLBACK_URL
     }
   }
 
