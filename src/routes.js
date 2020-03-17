@@ -289,4 +289,40 @@ routes.post("/unretweet", async function (req, res) {
   });
 });
 
+// Posta um tweet
+routes.post("/tweet", async function (req, res) {
+  const { _id, tweet } = req.body;
+
+  // Usuário não está logado
+  if (!_id)
+    return res.status(401).json({ error: "_id não informado!" });
+
+  const { oauth_token, oauth_token_secret } = await Usuario.findById(_id);
+
+  // Posta o tweet
+  let request_data = {
+    url: "https://api.twitter.com/1.1/statuses/update.json",
+    method: "POST",
+    data: {
+      status: tweet
+    }
+  }
+
+  const tokens = {
+    key: oauth_token,
+    secret: oauth_token_secret
+  }
+
+  axios({
+    url: request_data.url,
+    method: request_data.method,
+    headers: oauth.toHeader(oauth.authorize(request_data, tokens)),
+    data: qs.stringify(request_data.data)
+  }).then(data => {
+    return res.send(data.data)
+  }).catch(e => {
+    res.status(500).send(e.message);
+  });
+});
+
 module.exports = routes;
