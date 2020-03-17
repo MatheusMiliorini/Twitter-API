@@ -1,5 +1,5 @@
 {
-  "name": "twitterAPI",
+  "name": "twitter-api-backend",
   "version": "1.0.0",
   "scripts": {
     "dev": "nodemon --inspect src/index.js",
