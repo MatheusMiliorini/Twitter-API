@@ -12,6 +12,6 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(routes);
 
-app.listen(3333, () => {
+app.listen(process.env.PORT || 3333, () => {
     console.log("Servidor rodando");
 });

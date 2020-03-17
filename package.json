@@ -2,9 +2,9 @@
   "name": "twitterAPI",
   "version": "1.0.0",
   "scripts": {
-    "dev": "nodemon --inspect src/index.js"
+    "dev": "nodemon --inspect src/index.js",
+    "start": "node src/index.js"
   },
-  "main": "index.js",
   "license": "MIT",
   "dependencies": {
     "axios": "^0.19.2",
