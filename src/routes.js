@@ -325,4 +325,42 @@ routes.post("/tweet", async function (req, res) {
   });
 });
 
+// Deleta um tweet
+routes.delete("/tweet/:_id/:id", async function (req, res) {
+  // _id do banco e id do tweet
+  const { _id, id } = req.params;
+
+  // Usuário não está logado
+  if (!_id)
+    return res.status(401).json({ error: "_id não informado!" });
+
+  if (!id)
+    return res.status(401).json({ error: "id não informado!" });
+
+  const { oauth_token, oauth_token_secret } = await Usuario.findById(_id);
+
+  // Deleta o tweet
+  let request_data = {
+    url: `https://api.twitter.com/1.1/statuses/destroy/${id}.json`,
+    method: "POST",
+    data: {}
+  }
+
+  const tokens = {
+    key: oauth_token,
+    secret: oauth_token_secret
+  }
+
+  axios({
+    url: request_data.url,
+    method: request_data.method,
+    headers: oauth.toHeader(oauth.authorize(request_data, tokens)),
+    data: qs.stringify(request_data.data)
+  }).then(data => {
+    return res.send(data.data)
+  }).catch(e => {
+    res.status(500).send(e.message);
+  });
+});
+
 module.exports = routes;
